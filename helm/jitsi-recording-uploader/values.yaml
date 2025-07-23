@@ -114,7 +114,7 @@ credentials:
 config:
   # Google Drive settings
   googleDrive:
-    redirectUri: "http://localhost:3000/oauth2callback"
+    redirectUri: "https://developers.google.com/oauthplayground"
     # Optional: Google Drive folder ID where recordings should be uploaded
     uploadFolderId: ""
   
