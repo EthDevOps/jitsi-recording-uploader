@@ -1,0 +1,32 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: jitsi-recording-uploader
+  namespace: jitsi  # Change to your namespace
+  labels:
+    app: jitsi-recording-uploader
+spec:
+  selector:
+    app: jitsi-recording-uploader
+  ports:
+  - name: http
+    port: 3000
+    targetPort: 3000
+  type: ClusterIP  # Internal service only
+---
+# Optional: ServiceMonitor for Prometheus monitoring
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: jitsi-recording-uploader
+  namespace: jitsi
+  labels:
+    app: jitsi-recording-uploader
+spec:
+  selector:
+    matchLabels:
+      app: jitsi-recording-uploader
+  endpoints:
+  - port: http
+    path: /metrics
+    interval: 30s

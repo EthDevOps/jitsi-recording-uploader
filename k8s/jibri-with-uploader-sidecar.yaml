@@ -1,0 +1,65 @@
+# Example: Add uploader as sidecar to existing Jibri deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jibri-with-uploader
+  namespace: jitsi
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: jibri
+  template:
+    metadata:
+      labels:
+        app: jibri
+    spec:
+      containers:
+      # Your existing Jibri container
+      - name: jibri
+        image: jitsi/jibri:latest
+        # ... your existing Jibri config
+        volumeMounts:
+        - name: recordings-volume
+          mountPath: /opt/jitsi/jibri/recordings
+      
+      # Uploader sidecar container
+      - name: recording-uploader
+        image: jitsi-recording-uploader:latest
+        env:
+        - name: GOOGLE_CLIENT_ID
+          valueFrom:
+            secretKeyRef:
+              name: jitsi-uploader-credentials
+              key: GOOGLE_CLIENT_ID
+        - name: GOOGLE_CLIENT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: jitsi-uploader-credentials
+              key: GOOGLE_CLIENT_SECRET
+        - name: GOOGLE_REFRESH_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: jitsi-uploader-credentials
+              key: GOOGLE_REFRESH_TOKEN
+        - name: JIBRI_RECORDINGS_PATH
+          value: "/recordings"
+        envFrom:
+        - configMapRef:
+            name: jitsi-uploader-config
+        volumeMounts:
+        - name: recordings-volume
+          mountPath: /recordings
+          readOnly: true  # Sidecar only reads
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
+      
+      volumes:
+      - name: recordings-volume
+        persistentVolumeClaim:
+          claimName: jibri-recordings-pvc

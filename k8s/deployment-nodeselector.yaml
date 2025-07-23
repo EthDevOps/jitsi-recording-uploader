@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jitsi-recording-uploader
+  namespace: jitsi
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: jitsi-recording-uploader
+  template:
+    metadata:
+      labels:
+        app: jitsi-recording-uploader
+    spec:
+      # Schedule on nodes where Jibri runs
+      nodeSelector:
+        jibri-node: "true"  # Update to match your node labels
+      containers:
+      - name: uploader
+        # ... rest of container spec same as above
+        volumeMounts:
+        - name: recordings-volume
+          mountPath: /recordings
+          readOnly: true
+      volumes:
+      - name: recordings-volume
+        persistentVolumeClaim:
+          claimName: jibri-recordings-pvc
+          readOnly: true

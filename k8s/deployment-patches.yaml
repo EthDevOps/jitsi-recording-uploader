@@ -1,0 +1,18 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jitsi-recording-uploader
+spec:
+  template:
+    spec:
+      containers:
+      - name: uploader
+        # Environment-specific patches can go here
+        # Example: different resource limits for prod vs dev
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "200m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"

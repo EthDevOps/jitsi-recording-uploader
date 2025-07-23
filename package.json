@@ -1,0 +1,31 @@
+{
+  "name": "jitsi-recording-uploader",
+  "version": "1.0.0",
+  "description": "Tool to upload Jitsi recordings from Jibri container PVC to Google Drive",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js",
+    "test": "jest",
+    "test-auth": "node test-auth.js"
+  },
+  "dependencies": {
+    "googleapis": "^126.0.1",
+    "chokidar": "^3.5.3",
+    "dotenv": "^16.3.1",
+    "winston": "^3.10.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1",
+    "jest": "^29.7.0"
+  },
+  "keywords": [
+    "jitsi",
+    "jibri",
+    "google-drive",
+    "recording",
+    "upload"
+  ],
+  "author": "",
+  "license": "MIT"
+}

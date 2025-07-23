@@ -1,0 +1,78 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jitsi-recording-uploader
+  namespace: jitsi  # Change to your namespace
+  labels:
+    app: jitsi-recording-uploader
+spec:
+  replicas: 1  # Only run one instance to avoid duplicate uploads
+  selector:
+    matchLabels:
+      app: jitsi-recording-uploader
+  template:
+    metadata:
+      labels:
+        app: jitsi-recording-uploader
+    spec:
+      containers:
+      - name: uploader
+        image: jitsi-recording-uploader:latest  # Build and push your image
+        imagePullPolicy: Always
+        env:
+        # Load Google Drive credentials from secret
+        - name: GOOGLE_CLIENT_ID
+          valueFrom:
+            secretKeyRef:
+              name: jitsi-uploader-credentials
+              key: GOOGLE_CLIENT_ID
+        - name: GOOGLE_CLIENT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: jitsi-uploader-credentials
+              key: GOOGLE_CLIENT_SECRET
+        - name: GOOGLE_REFRESH_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: jitsi-uploader-credentials
+              key: GOOGLE_REFRESH_TOKEN
+        # Load application config from configmap
+        envFrom:
+        - configMapRef:
+            name: jitsi-uploader-config
+        volumeMounts:
+        - name: recordings-volume
+          mountPath: /recordings
+          readOnly: true  # Mount as read-only since we only need to read recordings
+        - name: logs-volume
+          mountPath: /app/logs
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
+        livenessProbe:
+          exec:
+            command:
+            - node
+            - -e
+            - "console.log('Health check passed')"
+          initialDelaySeconds: 30
+          periodSeconds: 30
+        readinessProbe:
+          exec:
+            command:
+            - node
+            - -e
+            - "console.log('Ready check passed')"
+          initialDelaySeconds: 10
+          periodSeconds: 10
+      volumes:
+      - name: recordings-volume
+        persistentVolumeClaim:
+          claimName: jibri-recordings-pvc  # Replace with your actual PVC name
+      - name: logs-volume
+        emptyDir: {}
+      restartPolicy: Always

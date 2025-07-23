@@ -1,0 +1,32 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: jitsi  # Change to your namespace
+
+resources:
+- configmap.yaml
+- secret.yaml
+- rbac.yaml
+- deployment.yaml
+- service.yaml
+
+# Common labels for all resources
+commonLabels:
+  app: jitsi-recording-uploader
+  version: v1.0.0
+
+# Images to use
+images:
+- name: jitsi-recording-uploader
+  newTag: latest
+
+# ConfigMap generator for environment-specific configs
+configMapGenerator:
+- name: jitsi-uploader-env-config
+  literals:
+  - ENVIRONMENT=production
+  - LOG_LEVEL=info
+
+# Patches for different environments
+patchesStrategicMerge:
+- deployment-patches.yaml

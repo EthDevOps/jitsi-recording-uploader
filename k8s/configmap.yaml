@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: jitsi-uploader-config
+  namespace: jitsi  # Change to your namespace
+data:
+  # Google Drive settings
+  GOOGLE_REDIRECT_URI: "http://localhost:3000/oauth2callback"
+  
+  # Jibri settings - mount path in the uploader container
+  JIBRI_RECORDINGS_PATH: "/recordings"
+  
+  # Optional: Google Drive folder ID where recordings should be uploaded
+  # UPLOAD_FOLDER_ID: "your_folder_id_here"
+  
+  # Application settings
+  LOG_LEVEL: "info"
+  WATCH_INTERVAL: "5000"
+  MAX_RETRIES: "3"
+  CLEANUP_AFTER_UPLOAD: "false"

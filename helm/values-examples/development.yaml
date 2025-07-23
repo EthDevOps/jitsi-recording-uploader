@@ -1,0 +1,78 @@
+# Development values for jitsi-recording-uploader
+# This is a YAML-formatted file.
+
+# Development image configuration
+image:
+  repository: localhost:5000/jitsi-recording-uploader  # Local registry
+  tag: dev
+  pullPolicy: Always  # Always pull for development
+
+# Lower resource limits for development
+resources:
+  limits:
+    cpu: 200m
+    memory: 256Mi
+  requests:
+    cpu: 50m
+    memory: 64Mi
+
+# Use regular secrets for development (easier setup)
+credentials:
+  method: secret
+  googleDrive:
+    clientId: "your-dev-client-id"
+    clientSecret: "your-dev-client-secret"
+    refreshToken: "your-dev-refresh-token"
+
+# Development configuration
+config:
+  jibri:
+    pvcName: "dev-jibri-recordings"
+  googleDrive:
+    uploadFolderId: "1DevFolderID"  # Development folder
+  app:
+    logLevel: "debug"  # Verbose logging for development
+    cleanupAfterUpload: false  # Keep files for debugging
+    maxRetries: 1  # Fail fast in development
+
+# Disable monitoring in development
+monitoring:
+  enabled: false
+
+# No pod disruption budget in development
+podDisruptionBudget:
+  enabled: false
+
+# Relaxed security for development
+podSecurityContext: {}
+securityContext: {}
+
+# Simple node scheduling for development
+affinity: {}
+nodeSelector: {}
+
+# Development annotations
+podAnnotations:
+  development: "true"
+
+# Quick probes for development
+probes:
+  liveness:
+    enabled: true
+    initialDelaySeconds: 10
+    periodSeconds: 10
+    timeoutSeconds: 3
+    failureThreshold: 2
+  readiness:
+    enabled: true
+    initialDelaySeconds: 5
+    periodSeconds: 5
+    timeoutSeconds: 3
+    failureThreshold: 2
+
+# Additional development environment variables
+extraEnv:
+  - name: NODE_ENV
+    value: "development"
+  - name: DEBUG
+    value: "*"
