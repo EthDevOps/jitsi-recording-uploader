@@ -90,6 +90,13 @@ class JitsiRecordingUploader {
     process.on('SIGINT', () => shutdown('SIGINT'));
   }
 
+  async forceReupload(filePath) {
+    if (!this.uploadManager) {
+      throw new Error('Upload manager not initialized');
+    }
+    return await this.uploadManager.forceReupload(filePath);
+  }
+
   startStatusLogging() {
     setInterval(() => {
       if (this.uploadManager) {
@@ -105,10 +112,34 @@ class JitsiRecordingUploader {
   }
 }
 
-// Start the application if this file is run directly
+// Handle CLI commands
 if (require.main === module) {
-  const uploader = new JitsiRecordingUploader();
-  uploader.start();
+  const args = process.argv.slice(2);
+  
+  if (args[0] === 'reupload' && args[1]) {
+    // Force re-upload command
+    const filePath = args[1];
+    const uploader = new JitsiRecordingUploader();
+    
+    (async () => {
+      try {
+        await uploader.start();
+        const fileName = await uploader.forceReupload(filePath);
+        logger.info(`Re-upload initiated for: ${fileName}`);
+      } catch (error) {
+        logger.error('Force re-upload failed:', error);
+        process.exit(1);
+      }
+    })();
+  } else if (args[0] === 'reupload') {
+    console.log('Usage: node src/index.js reupload <file-path>');
+    console.log('Example: node src/index.js reupload /path/to/recording.mp4');
+    process.exit(1);
+  } else {
+    // Normal startup
+    const uploader = new JitsiRecordingUploader();
+    uploader.start();
+  }
 }
 
 module.exports = JitsiRecordingUploader;

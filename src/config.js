@@ -14,6 +14,7 @@ const config = {
   app: {
     logLevel: process.env.LOG_LEVEL || 'info',
     watchInterval: parseInt(process.env.WATCH_INTERVAL) || 5000,
+    stabilityThreshold: parseInt(process.env.STABILITY_THRESHOLD) || 30000,
     maxRetries: parseInt(process.env.MAX_RETRIES) || 3,
     cleanupAfterUpload: process.env.CLEANUP_AFTER_UPLOAD === 'true',
   }

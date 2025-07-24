@@ -27,7 +27,7 @@ class FileWatcher {
       ignoreInitial: false, // Process existing files on startup
       depth: 2, // Watch subdirectories
       awaitWriteFinish: {
-        stabilityThreshold: 5000, // Wait 5 seconds after file stops changing
+        stabilityThreshold: config.app.stabilityThreshold, // Configurable wait time after file stops changing
         pollInterval: 1000
       }
     });

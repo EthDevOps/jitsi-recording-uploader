@@ -115,6 +115,40 @@ class UploadManager {
     return `${nameWithoutExt}_${timestamp}${extension}`;
   }
 
+  async forceReupload(filePath) {
+    // Check if file exists
+    if (!fs.existsSync(filePath)) {
+      throw new Error(`File not found: ${filePath}`);
+    }
+
+    // Check if it's a video file
+    const videoExtensions = ['.mp4', '.avi', '.mov', '.mkv', '.webm'];
+    const ext = path.extname(filePath).toLowerCase();
+    if (!videoExtensions.includes(ext)) {
+      throw new Error(`Not a video file: ${filePath}`);
+    }
+
+    logger.info(`Force re-uploading file: ${filePath}`);
+    
+    const uploadItem = {
+      filePath,
+      fileName: this.generateFileName(filePath),
+      retries: 0,
+      addedAt: new Date(),
+      forceReupload: true
+    };
+
+    // Add to front of queue for immediate processing
+    this.uploadQueue.unshift(uploadItem);
+    logger.info(`Added to front of queue for re-upload: ${filePath}`);
+
+    if (!this.isProcessing) {
+      this.processQueue();
+    }
+
+    return uploadItem.fileName;
+  }
+
   getQueueStatus() {
     return {
       queueLength: this.uploadQueue.length,
@@ -122,7 +156,8 @@ class UploadManager {
       items: this.uploadQueue.map(item => ({
         fileName: item.fileName,
         retries: item.retries,
-        addedAt: item.addedAt
+        addedAt: item.addedAt,
+        forceReupload: item.forceReupload || false
       }))
     };
   }
