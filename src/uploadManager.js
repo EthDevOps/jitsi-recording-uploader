@@ -56,17 +56,24 @@ class UploadManager {
 
   async processUploadItem(uploadItem) {
     try {
-      logger.info(`Uploading: ${uploadItem.fileName}`);
+      logger.info(`Processing: ${uploadItem.fileName}`);
       
       const result = await this.driveService.uploadFile(
         uploadItem.filePath,
         uploadItem.fileName
       );
 
-      logger.info(`Upload successful: ${uploadItem.fileName}`, {
-        fileId: result.id,
-        webViewLink: result.webViewLink
-      });
+      if (result.skipped) {
+        logger.info(`Upload skipped (file exists with same size): ${uploadItem.fileName}`, {
+          fileId: result.id,
+          webViewLink: result.webViewLink
+        });
+      } else {
+        logger.info(`Upload successful: ${uploadItem.fileName}`, {
+          fileId: result.id,
+          webViewLink: result.webViewLink
+        });
+      }
 
       // Clean up local file if configured to do so
       if (config.app.cleanupAfterUpload) {
@@ -112,7 +119,7 @@ class UploadManager {
     const extension = path.extname(originalName);
     const nameWithoutExt = path.basename(originalName, extension);
     
-    return `${nameWithoutExt}_${timestamp}${extension}`;
+    return `${nameWithoutExt}${extension}`;
   }
 
   async forceReupload(filePath) {

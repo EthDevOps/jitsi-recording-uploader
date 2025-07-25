@@ -31,6 +31,28 @@ class GoogleDriveService {
       const conferenceRoomName = this.extractConferenceRoomName(actualFileName);
       const conferenceDirectoryId = await this.ensureConferenceDirectory(conferenceRoomName);
 
+      // Get local file size
+      const localFileStats = fs.statSync(filePath);
+      const localFileSize = localFileStats.size;
+
+      // Check if file already exists in the target directory
+      const existingFile = await this.findExistingFile(actualFileName, conferenceDirectoryId);
+      
+      if (existingFile) {
+        const remoteFileSize = parseInt(existingFile.size);
+        if (localFileSize === remoteFileSize) {
+          logger.info(`File ${actualFileName} already exists with same size (${localFileSize} bytes). Skipping upload.`);
+          return {
+            id: existingFile.id,
+            name: existingFile.name,
+            webViewLink: `https://drive.google.com/file/d/${existingFile.id}/view`,
+            skipped: true
+          };
+        } else {
+          logger.info(`File ${actualFileName} exists but size differs (local: ${localFileSize}, remote: ${remoteFileSize}). Proceeding with upload.`);
+        }
+      }
+
       const fileMetadata = {
         name: actualFileName,
         parents: conferenceDirectoryId ? [conferenceDirectoryId] : (config.jibri.uploadFolderId ? [config.jibri.uploadFolderId] : undefined)
@@ -131,6 +153,26 @@ class GoogleDriveService {
       return response.data.files.length > 0 ? response.data.files[0] : null;
     } catch (error) {
       logger.error(`Failed to search for directory ${directoryName}:`, error);
+      return null;
+    }
+  }
+
+  async findExistingFile(fileName, parentFolderId = null) {
+    try {
+      let query = `name='${fileName}' and trashed=false`;
+      if (parentFolderId) {
+        query += ` and '${parentFolderId}' in parents`;
+      }
+
+      const response = await this.drive.files.list({
+        q: query,
+        fields: 'files(id,name,size)',
+        pageSize: 1
+      });
+
+      return response.data.files.length > 0 ? response.data.files[0] : null;
+    } catch (error) {
+      logger.error(`Failed to search for file ${fileName}:`, error);
       return null;
     }
   }
