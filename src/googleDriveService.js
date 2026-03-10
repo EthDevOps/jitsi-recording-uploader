@@ -21,14 +21,14 @@ class GoogleDriveService {
     this.drive = google.drive({ version: 'v3', auth: this.oauth2Client });
   }
 
-  async uploadFile(filePath, fileName = null) {
+  async uploadFile(filePath, fileName = null, options = {}) {
     try {
       if (!fs.existsSync(filePath)) {
         throw new Error(`File not found: ${filePath}`);
       }
 
       const actualFileName = fileName || path.basename(filePath);
-      const conferenceRoomName = this.extractConferenceRoomName(actualFileName);
+      const conferenceRoomName = options.roomName || this.extractConferenceRoomName(actualFileName);
       const conferenceDirectoryId = await this.ensureConferenceDirectory(conferenceRoomName);
 
       // Get local file size
@@ -91,7 +91,8 @@ class GoogleDriveService {
       '.avi': 'video/x-msvideo',
       '.mov': 'video/quicktime',
       '.mkv': 'video/x-matroska',
-      '.webm': 'video/webm'
+      '.webm': 'video/webm',
+      '.txt': 'text/plain'
     };
     return mimeTypes[ext] || 'application/octet-stream';
   }

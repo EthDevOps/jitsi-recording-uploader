@@ -1,5 +1,7 @@
 require('dotenv').config();
 
+const mode = (process.env.MODE || 'recordings').toLowerCase();
+
 const config = {
   google: {
     clientId: process.env.GOOGLE_CLIENT_ID,
@@ -11,7 +13,11 @@ const config = {
     recordingsPath: process.env.JIBRI_RECORDINGS_PATH || '/opt/jitsi/jibri/recordings',
     uploadFolderId: process.env.UPLOAD_FOLDER_ID,
   },
+  transcripts: {
+    transcriptsPath: process.env.TRANSCRIPTS_PATH || '/tmp/transcripts',
+  },
   app: {
+    mode,
     logLevel: process.env.LOG_LEVEL || 'info',
     watchInterval: parseInt(process.env.WATCH_INTERVAL) || 5000,
     stabilityThreshold: parseInt(process.env.STABILITY_THRESHOLD) || 30000,

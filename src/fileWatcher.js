@@ -9,10 +9,17 @@ class FileWatcher {
     this.onFileAdded = onFileAdded;
     this.watcher = null;
     this.processedFiles = new Set();
+    this.mode = config.app.mode;
+  }
+
+  getWatchPath() {
+    return this.mode === 'transcripts'
+      ? config.transcripts.transcriptsPath
+      : config.jibri.recordingsPath;
   }
 
   start() {
-    const watchPath = config.jibri.recordingsPath;
+    const watchPath = this.getWatchPath();
     
     if (!fs.existsSync(watchPath)) {
       logger.error(`Watch path does not exist: ${watchPath}`);
@@ -42,8 +49,8 @@ class FileWatcher {
 
   async handleFileAdd(filePath) {
     try {
-      // Only process video files
-      if (!this.isVideoFile(filePath)) {
+      // Only process matching file types
+      if (!this.isMatchingFile(filePath)) {
         return;
       }
 
@@ -64,10 +71,22 @@ class FileWatcher {
     }
   }
 
+  isMatchingFile(filePath) {
+    if (this.mode === 'transcripts') {
+      return this.isTranscriptFile(filePath);
+    }
+    return this.isVideoFile(filePath);
+  }
+
   isVideoFile(filePath) {
     const videoExtensions = ['.mp4', '.avi', '.mov', '.mkv', '.webm'];
     const ext = path.extname(filePath).toLowerCase();
     return videoExtensions.includes(ext);
+  }
+
+  isTranscriptFile(filePath) {
+    const ext = path.extname(filePath).toLowerCase();
+    return ext === '.txt';
   }
 
   stop() {
@@ -80,7 +99,7 @@ class FileWatcher {
 
   // Method to manually scan for existing files
   async scanExistingFiles() {
-    const watchPath = config.jibri.recordingsPath;
+    const watchPath = this.getWatchPath();
     
     if (!fs.existsSync(watchPath)) {
       logger.warn(`Watch path does not exist: ${watchPath}`);
@@ -98,7 +117,7 @@ class FileWatcher {
         
         if (stat.isDirectory()) {
           scanDirectory(filePath);
-        } else if (this.isVideoFile(filePath)) {
+        } else if (this.isMatchingFile(filePath)) {
           this.handleFileAdd(filePath);
         }
       }

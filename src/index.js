@@ -12,7 +12,7 @@ class JitsiRecordingUploader {
 
   async start() {
     try {
-      logger.info('Starting Jitsi Recording Uploader...');
+      logger.info(`Starting Jitsi Recording Uploader in ${config.app.mode} mode...`);
 
       // Ensure logs directory exists
       if (!fs.existsSync('logs')) {
@@ -64,8 +64,11 @@ class JitsiRecordingUploader {
       throw new Error(`Missing required environment variables: ${missing.join(', ')}`);
     }
 
-    if (!fs.existsSync(config.jibri.recordingsPath)) {
-      logger.warn(`Recordings path does not exist: ${config.jibri.recordingsPath}`);
+    const watchPath = config.app.mode === 'transcripts'
+      ? config.transcripts.transcriptsPath
+      : config.jibri.recordingsPath;
+    if (!fs.existsSync(watchPath)) {
+      logger.warn(`Watch path does not exist: ${watchPath}`);
     }
 
     logger.info('Configuration validated successfully');

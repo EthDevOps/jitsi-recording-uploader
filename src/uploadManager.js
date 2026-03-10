@@ -10,6 +10,7 @@ class UploadManager {
     this.uploadQueue = [];
     this.isProcessing = false;
     this.retryDelays = [1000, 5000, 15000]; // Exponential backoff delays
+    this.mode = config.app.mode;
   }
 
   async initialize() {
@@ -22,11 +23,17 @@ class UploadManager {
   }
 
   async queueUpload(filePath) {
+    let roomName = null;
+    if (this.mode === 'transcripts') {
+      roomName = this.extractRoomNameFromTranscript(filePath);
+    }
+
     const uploadItem = {
       filePath,
       fileName: this.generateFileName(filePath),
       retries: 0,
-      addedAt: new Date()
+      addedAt: new Date(),
+      roomName,
     };
 
     this.uploadQueue.push(uploadItem);
@@ -58,9 +65,15 @@ class UploadManager {
     try {
       logger.info(`Processing: ${uploadItem.fileName}`);
       
+      const options = {};
+      if (uploadItem.roomName) {
+        options.roomName = uploadItem.roomName;
+      }
+
       const result = await this.driveService.uploadFile(
         uploadItem.filePath,
-        uploadItem.fileName
+        uploadItem.fileName,
+        options
       );
 
       if (result.skipped) {
@@ -113,6 +126,21 @@ class UploadManager {
     }
   }
 
+  extractRoomNameFromTranscript(filePath) {
+    try {
+      const content = fs.readFileSync(filePath, 'utf8');
+      const match = content.match(/in room (.+?)@muc\.meet\.jitsi/);
+      if (match) {
+        return match[1];
+      }
+      logger.warn(`Could not extract room name from transcript: ${filePath}`);
+      return 'unknown';
+    } catch (error) {
+      logger.error(`Failed to read transcript file ${filePath}:`, error);
+      return 'unknown';
+    }
+  }
+
   generateFileName(filePath) {
     const originalName = path.basename(filePath);
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
@@ -128,21 +156,31 @@ class UploadManager {
       throw new Error(`File not found: ${filePath}`);
     }
 
-    // Check if it's a video file
+    // Check if it's a supported file type
     const videoExtensions = ['.mp4', '.avi', '.mov', '.mkv', '.webm'];
     const ext = path.extname(filePath).toLowerCase();
-    if (!videoExtensions.includes(ext)) {
+    if (this.mode === 'transcripts') {
+      if (ext !== '.txt') {
+        throw new Error(`Not a transcript file: ${filePath}`);
+      }
+    } else if (!videoExtensions.includes(ext)) {
       throw new Error(`Not a video file: ${filePath}`);
     }
 
     logger.info(`Force re-uploading file: ${filePath}`);
-    
+
+    let roomName = null;
+    if (this.mode === 'transcripts') {
+      roomName = this.extractRoomNameFromTranscript(filePath);
+    }
+
     const uploadItem = {
       filePath,
       fileName: this.generateFileName(filePath),
       retries: 0,
       addedAt: new Date(),
-      forceReupload: true
+      forceReupload: true,
+      roomName,
     };
 
     // Add to front of queue for immediate processing
